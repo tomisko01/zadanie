@@ -1,15 +1,20 @@
 package com.recruitment.task;
 
+import com.recruitment.task.api.Contact;
+import com.recruitment.task.api.ContactFromFile;
+import com.recruitment.task.api.ContactTypeEnum;
 import com.recruitment.task.api.CustomerFromFile;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class XmlHandler extends DefaultHandler {
     private List<CustomerFromFile> customers = null;
+    private List<ContactFromFile> contacts = null;
     private CustomerFromFile customer = null;
     private StringBuilder stringBuilder = null;
 
@@ -35,8 +40,6 @@ public class XmlHandler extends DefaultHandler {
     public void startElement(String uri, String localName, String qName,
                              Attributes attributes) throws SAXException {
 
-        System.out.println("Start Element :" + qName);
-
         if (qName.equalsIgnoreCase("person")) {
             customer = new CustomerFromFile();
             if (customers == null)
@@ -51,20 +54,16 @@ public class XmlHandler extends DefaultHandler {
             bCity = true;
         }
 
-
-        if (qName.equalsIgnoreCase("email")) {
+        if (qName.equalsIgnoreCase("contacts")) {
+            if (contacts == null)
+                contacts = new ArrayList<>();
+        } else if (qName.equalsIgnoreCase("email")) {
             bEmail = true;
-        }
-
-        if (qName.equalsIgnoreCase("phone")) {
+        } else if (qName.equalsIgnoreCase("phone")) {
             bPhone = true;
-        }
-
-        if (qName.equalsIgnoreCase("jabber")) {
+        } if (qName.equalsIgnoreCase("jabber")) {
             bJabber = true;
-        }
-
-        if (this.bContacts && !qName.equalsIgnoreCase("email") && !qName.equalsIgnoreCase("phone") && !qName.equalsIgnoreCase("jabber")) {
+        } if (this.bContacts && !qName.equalsIgnoreCase("email") && !qName.equalsIgnoreCase("phone") && !qName.equalsIgnoreCase("jabber")) {
             bUnknown = true;
         }
 
@@ -78,7 +77,6 @@ public class XmlHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName,
                            String qName) throws SAXException {
-        System.out.println("End Element :" + qName);
         if (bName) {
             customer.setName(stringBuilder.toString());
             bName = false;
@@ -100,59 +98,49 @@ public class XmlHandler extends DefaultHandler {
         }
 
         if (qName.equalsIgnoreCase("person")) {
-            // add Employee object to list
-            customers.add(customer);
-        }
-/*
-        if (qName.equalsIgnoreCase("contacts")) {
             bContacts = false;
-        }*/
+            customer.setContactFromFile(contacts);
+            customers.add(customer);
+            contacts = null;
+        }
+
+        if (bUnknown) {
+            assert contacts != null;
+            contacts.add(ContactFromFile.builder()
+                    .intType(ContactTypeEnum.UNKNOWN.getShortForm())
+                    .contactDetails(stringBuilder.toString())
+                    .build());
+            bUnknown = false;
+        }
+
+        if (bPhone) {
+            assert contacts != null;
+            contacts.add(ContactFromFile.builder()
+                    .intType(ContactTypeEnum.PHONE.getShortForm())
+                    .contactDetails(stringBuilder.toString())
+                    .build());
+            bPhone = false;
+        }
+
+        if (bEmail) {
+            contacts.add(ContactFromFile.builder()
+                    .intType(ContactTypeEnum.EMAIL.getShortForm())
+                    .contactDetails(stringBuilder.toString())
+                    .build());
+            bEmail = false;
+        }
+
+        if (bJabber) {
+            contacts.add(ContactFromFile.builder()
+                    .intType(ContactTypeEnum.JABBER.getShortForm())
+                    .contactDetails(stringBuilder.toString())
+                    .build());
+            bJabber = false;
+        }
     }
 
     @Override
     public void characters(char ch[], int start, int length) throws SAXException {
         stringBuilder.append(new String(ch, start, length));
-
-/*        if (Stream.of(customer).allMatch(Objects::nonNull)) {
-            int id = jdbcTemplate.update("INSERT INTO customers(name, surname, city, age) " +
-                    "VALUES (?,?,?,?)", customer.getName(), customer.getSurname(), customer.getCity(), customer.getAge());
-            log.info(String.valueOf(id));
-        }*/
-
-   /*                 if (bUnknown) {
-                        System.out.println("contact unknown : " + new String(ch, start, length));
-                        contacts.add(Contact.builder()
-                                .intType(ContactTypeEnum.UNKNOWN.getShortForm())
-                                .contactDetails(new String(ch, start, length))
-                                .build());
-                        bUnknown = false;
-                    }
-
-                    if (bPhone) {
-                        System.out.println("Phone : " + new String(ch, start, length));
-                        contacts.add(Contact.builder()
-                                .intType(ContactTypeEnum.PHONE.getShortForm())
-                                .contactDetails(new String(ch, start, length))
-                                .build());
-                        bPhone = false;
-                    }
-
-                    if (bEmail) {
-                        System.out.println("Email : " + new String(ch, start, length));
-                        contacts.add(Contact.builder()
-                                .intType(ContactTypeEnum.EMAIL.getShortForm())
-                                .contactDetails(new String(ch, start, length))
-                                .build());
-                        bEmail = false;
-                    }
-
-                    if (bJabber) {
-                        System.out.println("Jabber : " + new String(ch, start, length));
-                        contacts.add(Contact.builder()
-                                .intType(ContactTypeEnum.JABBER.getShortForm())
-                                .contactDetails(new String(ch, start, length))
-                                .build());
-                        bJabber = false;
-                    }*/
     }
 }

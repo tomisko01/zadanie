@@ -47,15 +47,7 @@ public class TaskApplication implements CommandLineRunner {
         jdbcTemplate.execute("CREATE TABLE contacts(" +
                 "id SERIAL, customerId VARCHAR (18), contactDetails VARCHAR(255), type VARCHAR(1))");
 
-        // Split up the array of whole names into an array of first/last names
-        /*List<Object[]> splitUpNames = Arrays.asList("John Woo", "Jeff Dean", "Josh Bloch", "Josh Long").stream()
-                .map(name -> name.split(" "))
-                .collect(Collectors.toList());
-
-        // Use a Java 8 stream to print out each tuple of the list
-        splitUpNames.forEach(name -> log.info(String.format("Inserting customer record for %s %s", name[0], name[1])));*/
-
-        try {
+              try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             SAXParser saxParser = factory.newSAXParser();
 
@@ -79,11 +71,14 @@ public class TaskApplication implements CommandLineRunner {
         } catch (Exception e) {
             e.printStackTrace();
         }
-/*
-        // Uses JdbcTemplate's batchUpdate operation to bulk load data
+       /* jdbcTemplate.batchUpdate("INSERT INTO customers(first_name, last_name, city, age) " ,
+                "INSERT INTO contacts(customerId, contactDetails, type) " +
+                "VALUES (?,?,?)");
+         //Uses JdbcTemplate's batchUpdate operation to bulk load data
         jdbcTemplate.batchUpdate("INSERT INTO customers(first_name, last_name, city, age) " +
-                "VALUES (?,?,'lublin',13)", splitUpNames);
+                "VALUES (?,?,'lublin',13)", splitUpNames);*/
 
+/*
         List<Object[]> contacts = Collections.singletonList("123 asd 1").stream()
                 .map(a -> a.split(" "))
                 .collect(Collectors.toList());

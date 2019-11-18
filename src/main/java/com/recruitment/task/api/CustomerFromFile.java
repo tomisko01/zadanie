@@ -16,4 +16,5 @@ import java.util.List;
 public class CustomerFromFile implements Serializable {
     private int age;
     private String name, surname, city;
+    private List<ContactFromFile> contactFromFile;
 }
