@@ -1,4 +1,4 @@
-/*
+
 package com.recruitment.task.api;
 
 import lombok.AllArgsConstructor;
@@ -13,11 +13,13 @@ import java.util.List;
 @Builder
 @Data
 public class Customer {
+    private long id;
     private int age;
     private String firstName, lastName, city;
     private List<Contact> contacts;
 }
-*/
+
+/*
 package com.recruitment.task.api;
 
 import lombok.Data;
@@ -39,4 +41,4 @@ public class Customer {
                 "Customer[id=%d, firstName='%s', lastName='%s']",
                 id, firstName, lastName);
     }
-}
+}*/

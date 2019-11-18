@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Contact {
-    private String contact;
+    private long id;
+    private long customerId;
+    private String contactDetails;
     private ContactTypeEnum type;
+    private int intType;
 }
