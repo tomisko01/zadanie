@@ -13,6 +13,5 @@ public class Contact {
     private long id;
     private long customerId;
     private String contactDetails;
-    private ContactTypeEnum type;
     private int intType;
 }

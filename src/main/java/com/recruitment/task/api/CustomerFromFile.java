@@ -5,17 +5,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.omg.CORBA.RepositoryIdHelper;
 
+import java.io.Serializable;
 import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
-public class Customer {
-    private long id;
+public class CustomerFromFile implements Serializable {
     private int age;
     private String name, surname, city;
-    private List<Contact> contacts;
 }
