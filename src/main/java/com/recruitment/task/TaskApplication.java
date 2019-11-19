@@ -2,6 +2,7 @@ package com.recruitment.task;
 
 import com.recruitment.task.api.CustomerFromFile;
 import com.recruitment.task.dao.CustomerDao;
+import com.recruitment.task.service.XmlReaderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +10,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.xml.sax.InputSource;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +30,9 @@ public class TaskApplication implements CommandLineRunner {
 
     @Autowired
     CustomerDao customerDao;
+
+    @Autowired
+    XmlReaderService xmlReader;
 
     @Override
     public void run(String... args) throws Exception {
@@ -58,25 +57,9 @@ public class TaskApplication implements CommandLineRunner {
         }
 
         if (args.length == 0 || fileExtension.equalsIgnoreCase(XML)) {
-            try {
-                SAXParserFactory factory = SAXParserFactory.newInstance();
-                SAXParser saxParser = factory.newSAXParser();
-
-                XmlHandler handler = new XmlHandler();
-
-                File file = new File(args.length == 0 ? DEFAULT_XML_FILE_PATH : fileArgument);
-                InputStream inputStream = new FileInputStream(file);
-                Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-
-                InputSource is = new InputSource(reader);
-                is.setEncoding("UTF-8");
-
-                saxParser.parse(is, handler);
-                customersList = handler.getCustomers();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            customersList = xmlReader.readCustomersFromFile(args.length == 0 ? DEFAULT_XML_FILE_PATH : fileArgument);
         }
+
         if (!customersList.isEmpty()) {
             customerDao.saveAll(customersList);
         }
