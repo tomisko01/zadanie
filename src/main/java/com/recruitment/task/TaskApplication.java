@@ -9,20 +9,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.xml.sax.InputSource;
 
-import javax.sql.DataSource;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,6 +52,9 @@ public class TaskApplication implements CommandLineRunner {
         jdbcTemplate.execute("CREATE TABLE contacts(" +
                 "id SERIAL, customerId VARCHAR (18), contactDetails VARCHAR(255), type VARCHAR(1))");
 
+        List<CustomerFromFile> customersList = new ArrayList<>();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             SAXParser saxParser = factory.newSAXParser();
@@ -66,7 +71,7 @@ public class TaskApplication implements CommandLineRunner {
             is.setEncoding("UTF-8");
 
             saxParser.parse(is, handler);
-            List<CustomerFromFile> customersList = handler.getCustomers();
+            customersList = handler.getCustomers();
 
             for (CustomerFromFile customer : customersList) {
                 System.out.println(customer);
@@ -75,36 +80,37 @@ public class TaskApplication implements CommandLineRunner {
             e.printStackTrace();
         }
 
-        String queryInsertCustomer = "INSERT INTO customers(first_name, last_name, city, age)";
-        String queryInsertContact = "INSERT INTO contacts(customerId, contactDetails, type)";
+        if (!customersList.isEmpty()) {
+            String queryInsertCustomer = "INSERT INTO customers(name, surname, city, age) VALUES (?, ?, ?, ?)";
+            String queryInsertContact = "INSERT INTO contacts(customerId, contactDetails, type) VALUES (?, ?, ?)";
 
-        PreparedStatement updateCustomer = null;
-        PreparedStatement updateContact = null;
+            try (Connection connection = DataSourceUtils.getConnection(Objects.requireNonNull(jdbcTemplate.getDataSource()))) {
+                connection.setAutoCommit(false);
 
-        try(Connection connection = DataSourceUtils.getConnection(Objects.requireNonNull(jdbcTemplate.getDataSource()))){
-            connection.setAutoCommit(false);
+                customersList.forEach(customer -> {
+                    jdbcTemplate.update(
+                            new PreparedStatementCreator() {
+                                @Override
+                                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+                                    PreparedStatement ps = connection.prepareStatement(queryInsertCustomer, Statement.RETURN_GENERATED_KEYS);
+                                    ps.setString(1, customer.getName());
+                                    ps.setString(2, customer.getSurname());
+                                    ps.setString(3, customer.getCity());
+                                    ps.setInt(4, customer.getAge());
+                                    return ps;
+                                }
+                            }, keyHolder);
 
-            updateCustomer = connection.prepareStatement(queryInsertCustomer);
-            updateContact = connection.prepareStatement(queryInsertContact);
+                    int customerId = (int) keyHolder.getKey();
 
+                    customer.getContactFromFile().forEach(contact -> {
+                        jdbcTemplate.update(queryInsertContact, customerId, contact.getContactDetails(), contact.getIntType());
+                    });
+                });
+                connection.commit();
+            }
         }
-       /* jdbcTemplate.batchUpdate("INSERT INTO customers(first_name, last_name, city, age) " ,
-                "INSERT INTO contacts(customerId, contactDetails, type) " +
-                "VALUES (?,?,?)");
-         //Uses JdbcTemplate's batchUpdate operation to bulk load data
-        jdbcTemplate.batchUpdate("INSERT INTO customers(first_name, last_name, city, age) " +
-                "VALUES (?,?,'lublin',13)", splitUpNames);*/
 
-/*
-        List<Object[]> contacts = Collections.singletonList("123 asd 1").stream()
-                .map(a -> a.split(" "))
-                .collect(Collectors.toList());
-
-        jdbcTemplate.batchUpdate("INSERT INTO contacts(customerId, contactDetails, type) " +
-                "VALUES (?,?,?)", contacts);
-
-
-        log.info("Querying for customer records where first_name = 'Josh':");*/
         jdbcTemplate.query(
                 "SELECT id, name, surname, age, city FROM customers",
                 (rs, rowNum) -> Customer.builder()
