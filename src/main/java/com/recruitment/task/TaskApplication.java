@@ -9,19 +9,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.xml.sax.Attributes;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
+import javax.sql.DataSource;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 @SpringBootApplication
 public class TaskApplication implements CommandLineRunner {
@@ -47,11 +50,11 @@ public class TaskApplication implements CommandLineRunner {
         jdbcTemplate.execute("CREATE TABLE contacts(" +
                 "id SERIAL, customerId VARCHAR (18), contactDetails VARCHAR(255), type VARCHAR(1))");
 
-              try {
+        try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             SAXParser saxParser = factory.newSAXParser();
 
-            XmlHandler handler = new XmlHandler() ;
+            XmlHandler handler = new XmlHandler();
 
             File directory = new File("./");
             System.out.println(directory.getAbsolutePath());
@@ -65,11 +68,25 @@ public class TaskApplication implements CommandLineRunner {
             saxParser.parse(is, handler);
             List<CustomerFromFile> customersList = handler.getCustomers();
 
-            for(CustomerFromFile customer : customersList){
+            for (CustomerFromFile customer : customersList) {
                 System.out.println(customer);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        String queryInsertCustomer = "INSERT INTO customers(first_name, last_name, city, age)";
+        String queryInsertContact = "INSERT INTO contacts(customerId, contactDetails, type)";
+
+        PreparedStatement updateCustomer = null;
+        PreparedStatement updateContact = null;
+
+        try(Connection connection = DataSourceUtils.getConnection(Objects.requireNonNull(jdbcTemplate.getDataSource()))){
+            connection.setAutoCommit(false);
+
+            updateCustomer = connection.prepareStatement(queryInsertCustomer);
+            updateContact = connection.prepareStatement(queryInsertContact);
+
         }
        /* jdbcTemplate.batchUpdate("INSERT INTO customers(first_name, last_name, city, age) " ,
                 "INSERT INTO contacts(customerId, contactDetails, type) " +
