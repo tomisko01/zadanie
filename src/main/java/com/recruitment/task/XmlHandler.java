@@ -1,6 +1,5 @@
 package com.recruitment.task;
 
-import com.recruitment.task.api.Contact;
 import com.recruitment.task.api.ContactFromFile;
 import com.recruitment.task.api.ContactTypeEnum;
 import com.recruitment.task.api.CustomerFromFile;
@@ -9,7 +8,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class XmlHandler extends DefaultHandler {
